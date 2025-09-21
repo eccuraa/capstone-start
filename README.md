@@ -312,6 +312,10 @@ pip install -r requirements.txt
 - **Memory Usage**: Set appropriate output directory with sufficient space
 - **Rate Limits**: Respect API rate limits, especially during development
 
+## Acknowledgments
+This project builds on [LANation-Ideathon-Livestream-transcription](https://github.com/adam-ajroudi/LANation-Ideathon-Livestream-transcription) by [adam-ajroudi](https://github.com/adam-ajroudi). 
+All credit for the original repository belongs to them; my contributions are adaptations and extensions for my Capstone project.
+
 ## 📄 License
 
 This project is licensed under the **Academic Research License**. 
@@ -341,3 +345,4 @@ For academic collaboration or questions:
 ---
 
 **🎓 Capstone Project**: Advanced AI-powered media processing system combining speech recognition, natural language processing, and computer vision for intelligent content analysis. 
+
