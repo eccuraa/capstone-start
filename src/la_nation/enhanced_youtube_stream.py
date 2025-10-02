@@ -77,7 +77,7 @@ class EnhancedYouTubeStream:
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': False,
-                'format': 'best[height<=720]/best',  # Prefer reasonable quality
+                'format': 'best/bestaudio',  # Try best available format
                 'noplaylist': True,
             }
             

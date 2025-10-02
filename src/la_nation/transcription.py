@@ -14,22 +14,12 @@ from dotenv import load_dotenv
 # Import Deepgram SDK with fallback to HTTP for Python 3.12 compatibility
 DEEPGRAM_SDK_AVAILABLE = False
 try:
-    from deepgram import (
-        DeepgramClient,
-        PrerecordedOptions,
-        FileSource,
-    )
-    # Test if we can actually instantiate the client to catch typing.Union errors
+    from deepgram import Deepgram
+    # Test if we can actually instantiate the client
     test_key = "test"
-    test_client = DeepgramClient(test_key)
-    # Force HTTP API for Python 3.12 compatibility
-    import sys
-    if sys.version_info >= (3, 12):
-        DEEPGRAM_SDK_AVAILABLE = False
-        print("🔄 Python 3.12+ detected: Forcing Deepgram HTTP API for compatibility")
-    else:
-        DEEPGRAM_SDK_AVAILABLE = True
-        print("✅ Deepgram SDK loaded and tested successfully")
+    test_client = Deepgram(test_key)
+    DEEPGRAM_SDK_AVAILABLE = True
+    print("✅ Deepgram SDK loaded and tested successfully")
 except Exception as e:
     DEEPGRAM_SDK_AVAILABLE = False
     print(f"⚠️ Deepgram SDK not available (using HTTP fallback): {e}")
@@ -68,7 +58,7 @@ class LiveTranscriber:
         
         # Initialize Deepgram client
         if DEEPGRAM_API_KEY:
-            self.deepgram = DeepgramClient(DEEPGRAM_API_KEY)
+            self.deepgram = Deepgram(DEEPGRAM_API_KEY)
             self.use_deepgram = True
         else:
             logger.warning(
@@ -286,23 +276,18 @@ class LiveTranscriber:
             Transcribed text
         """
         try:
-            # Configure options
-            options = PrerecordedOptions(
-                model="nova-2",
-                smart_format=True,
-                language="en",
-                punctuate=True
-            )
+            # Configure options as a dictionary
+            options = {
+                "model": "nova-2",
+                "smart_format": True,
+                "language": "en",
+                "punctuate": True
+            }
             
             # Open the audio file
-            with open(audio_file, "rb") as file:
-                buffer_data = file.read()
-            
-            # Send to Deepgram
-            source = FileSource(buffer=buffer_data)
-            response = await self.deepgram.listen.prerecorded.v("1").transcribe_file(
-                source, options
-            )
+            with open(audio_file, 'rb') as audio:
+                # Send to Deepgram
+                response = await self.deepgram.transcription.prerecorded(audio, options)
             
             # Extract transcript
             if response and response.results:
