@@ -1,0 +1,79 @@
+function generateSlidesAsImages() {
+  // IDs of your template + destination folder
+  var templateId = "15x1ACLzmyaii0Popu7HB80KH4I7HvBqX1lxXQX1g9Hg"; // template Slides
+  var folderId   = "13xssvJJxv1bUw0zu6n-CURf-mrRD_nqS"; // parent folder for outputs
+  
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var headers = sheet.getDataRange().getValues()[0];
+  var rows = sheet.getDataRange().getValues().slice(1);
+  
+  var imageColumnIndex = headers.indexOf("Image");
+
+  rows.forEach(function(row, i) {
+    if (row.join("") === "" || imageColumnIndex === -1) return; 
+
+    var copy = DriveApp.getFileById(templateId).makeCopy("Carousel " + (i + 1), DriveApp.getFolderById(folderId));
+    var slideId = copy.getId();
+    var presentation = SlidesApp.openById(slideId);
+    var slides = presentation.getSlides();
+    
+    // Replace text placeholders
+    headers.forEach(function(header, j) {
+      var placeholder = "[" + header + "]";
+      var value = row[j];
+      slides.forEach(function(slide) {
+        slide.replaceAllText(placeholder, value);
+      });
+    });
+
+    // ✨ MODIFIED: Now handles both URLs and Base64 data
+    var imageData = row[imageColumnIndex];
+    if (imageData) {
+      slides.forEach(function(slide) {
+        var placeholderShape = slide.getShapes().find(function(shape) {
+          return shape.getDescription() === "{{image_placeholder}}";
+        });
+
+        if (placeholderShape) {
+          var width = placeholderShape.getWidth();
+          var height = placeholderShape.getHeight();
+          var left = placeholderShape.getLeft();
+          var top = placeholderShape.getTop();
+          
+          // Check if the data is a Base64 string
+          if (imageData.startsWith("data:image/")) {
+            // It's Base64, so we need to decode it
+            var parts = imageData.split(",");
+            var mimeType = parts[0].match(/:(.*?);/)[1];
+            var encodedData = parts[1];
+            var decodedBlob = Utilities.newBlob(Utilities.base64Decode(encodedData), mimeType);
+            slide.insertImage(decodedBlob, left, top, width, height);
+          } else {
+            // It's a regular URL
+            slide.insertImage(imageData, left, top, width, height);
+          }
+          
+          placeholderShape.remove();
+        }
+      });
+    }
+    
+    presentation.saveAndClose();
+    
+    var parentFolder = DriveApp.getFolderById(folderId);
+    var imageFolder = parentFolder.createFolder("Carousel_" + (i + 1) + "_Images");
+    
+    // Export each slide as PNG
+    slides.forEach(function(slide, s) {
+      var url = "https://slides.googleapis.com/v1/presentations/" + slideId + "/pages/" + slide.getObjectId() + "/thumbnail";
+      var params = {
+        method: "get",
+        headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() },
+        muteHttpExceptions: true
+      };
+      var response = UrlFetchApp.fetch(url, params);
+      var blob = response.getBlob().setName("Slide_" + (s + 1) + ".png");
+      imageFolder.createFile(blob);
+    });
+  });
+}
